@@ -1,6 +1,7 @@
 #pragma once
 
 #include <EEPROM.h>
+#include "RemoteLayouts.h"
 #include <avr/pgmspace.h>
 #include <util/crc16.h>
 #include <string.h>     // memcpy, memcmp
@@ -10,9 +11,9 @@
 //  Layout persistence with dual-slot health-voting in EEPROM
 //
 //  Data managed here:
-//    - btn_design[btnSize]            (declared in RemoteStick.h - RAM copy)
-//    - all_layouts[NUM_LAYOUTS]       (declared in RemoteStick.h - flash presets)
-//    - active_layout_index            (declared in RemoteStick.h)
+//    - btn_design[btnSize]            (declared in RemoteLayouts.h - RAM copy)
+//    - all_layouts[NUM_LAYOUTS]       (declared in RemoteLayouts.h - flash presets)
+//    - active_layout_index            (declared in RemoteLayouts.h)
 //
 //  Slot layout in EEPROM (per slot):
 //    [0..3]                  LayoutBlockHeader (magic, sequence, presetIdx, reserved)
@@ -194,7 +195,6 @@ void writeLayoutToEEPROM(uint8_t presetIdx) {
 
 // ---------------------------------------------------------------------------
 // Load a flash preset into btn_design AND persist to EEPROM.
-// Replaces the old loadLayout() from RemoteStick.h.
 // ---------------------------------------------------------------------------
 void loadPresetFromFlash(uint8_t presetIdx) {
     if (presetIdx >= NUM_LAYOUTS) presetIdx = 0;
@@ -264,12 +264,13 @@ void sendLayoutHealth() {
 #define EE_PIN_CONFIG     0x130        // right after the layout health block
 #define PINCFG_MAGIC      0xCC55
 
-// PushButton<->pin mapping. 0xFF = button not connected.
+// Factory pin mapping, one MCU pin per layout row. 0xFF = not connected.
 // Order matches the enum {btnFn, btnMenu, btnX, btnSTF, btnEnter,
 //                        joyUp, joyDown, joyLeft, joyRight, btnPTT}
-const PROGMEM uint8_t default_pin_config[btnSize] = {
-    9, 14, 15, 7, 6, 2, 4, 5, 3, 0xFF
-};
+// It depends on how the device is wired, so every sketch defines it itself
+// (after including SteFlyRemoteCore.h). For a rotary encoder the two rows of
+// its directions hold the encoder's A and B pin.
+extern const PROGMEM uint8_t default_pin_config[btnSize];
 
 // RAM working copy - filled at boot from EEPROM (or default_pin_config)
 uint8_t active_pin_config[btnSize];

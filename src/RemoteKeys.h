@@ -1,5 +1,14 @@
 #pragma once
 
+// ============================================================================
+//  Key definitions shared by all SteFly remote devices.
+//
+//  A layout entry (key_struct) holds three sKey values per button, one for
+//  each gesture: Click, LongClick and DblClick. A plain key is sent as a
+//  keyboard stroke; an extended key (ext = KEY_EXTEND) selects one of the
+//  built-in functions below, which need more than a single keystroke.
+// ============================================================================
+
 struct sKey {
   uint8_t ext;
   uint8_t key;
@@ -64,52 +73,3 @@ key_code(sKey key) {
     }
     return buffer;
 }
-
-// Anzahl Tasten und Slots pro Eintrag aus deinem Sketch
-// #define NUM_KEYS    10
-
-// Create instances of PushButtons on digital pins
-enum {
-       btnFn, btnMenu, btnX, btnSTF,
-       btnEnter,
-       joyUp, joyDown, joyLeft, joyRight,
-       btnPTT,
-       btnSize
-};
-
-// --- Flash-residente Layouts ------------------------------------------------
-#include "layouts/basic-layout.h"
-#include "layouts/advanced-layout.h"
-#include "layouts/android-layout.h"
-#include "layouts/android2-layout.h"
-#include "layouts/starterkey-layout.h"
-#include "layouts/starterkey2-layout.h"
-#include "layouts/test-layout.h"
-
-// Pointer-Tabelle to alle layouts (Pointer itself also in flash)
-const PROGMEM void* const all_layouts[] = {
-    layout_basic,
-    layout_advanced,   // w/ some dbl clicks and slow click behavior
-    layout_android,    // w/o dbl click
-    layout_android2,   // w/ dbl click
-    layout_starterkey, // w/o dbl click
-    layout_starterkey2,// w/ dbl click
-    layout_test,       // test layout
-};
-const uint8_t NUM_LAYOUTS = sizeof(all_layouts) / sizeof(all_layouts[0]);
-
-// --- RAM working copy -------------------------------------------------------
-// Both 'btn_design' and 'active_layout_index' are read/written by the mainloop
-// and by the EEPROM persistence layer in RemoteEEprom.h. Include order matters:
-// RemoteStick.h must be included BEFORE RemoteEEprom.h in the main .ino.
-key_struct btn_design[btnSize];
-
-uint8_t active_layout_index = 0;
-
-// Layout loading is handled by RemoteEEprom.h:
-//   loadLayoutFromEEPROM()        - boot-time restore from EEPROM
-//   loadPresetFromFlash(idx)      - select a flash preset and persist
-//   writeLayoutToEEPROM(idx)      - persist current btn_design
-//   updateKeySlot(btn, slot, ...) - modify a single key
-//   sendKeySlot(btn, slot, ...)   - ask for a single key
-//   sendLayoutHealth()            - NMEA $PSRCH,R diagnostic dump

@@ -5,7 +5,7 @@
 //
 //  Supported NMEA-style commands (received via Serial.read in the main loop):
 //    $PSRCI,R,<topic>     -> queryInfo() : Info  / Settings / Version / Device /
-//                                          FileDate / FileName / Time
+//                                          FileDate / FileName / Time / Core
 //    $PSRCC,S,<cmd>       -> execCommand(): Reboot
 //    $PSRCS,S,Layout,N    -> select flash preset N (0..NUM_LAYOUTS-1)
 //    $PSRCK,S,Key,btn,slot,ext,key  -> remap a single key entry
@@ -19,10 +19,10 @@
 
 #include <EEPROM.h>
 #include <avr/wdt.h>          // wdt_enable, WDTO_15MS - used by dispatchSerialCommand (PSRCP service)
-#include "RemoteStick.h"
+#include "RemoteLayouts.h"
 #include "RemoteEEprom.h"
 
-// --- External symbols defined in the main .ino ------------------------------
+// --- Symbols defined by the device sketch or by RemoteCore.h ----------------
 extern const char *Version;
 extern const char *Device;
 extern const char *Date;
@@ -117,6 +117,13 @@ void sendTime() {
     sendNMEA('I', send_info);
 }
 
+// The library version is reported next to the sketch version, so that a
+// device in the field tells which state of the shared code it was built with.
+void sendCoreVersion() {
+    strncpy_P(send_info, PSTR("Core," STEFLY_REMOTE_CORE_VERSION), buffer_size);
+    sendNMEA('I', send_info);
+}
+
 void sendLayout() {
     snprintf_P(send_info, buffer_size, PSTR("Layout,%u"), active_layout_index);
     sendNMEA('S', send_info);
@@ -135,6 +142,7 @@ void sendSettingsBlock() {
 void sendInfoBlock() {
     sendDevice();
     sendVersion();
+    sendCoreVersion();
     sendFileName();
     sendSerialNumber();
     sendNMEA('I', "Ready");
@@ -143,8 +151,8 @@ void sendInfoBlock() {
 // ============================================================================
 //  Reset command (triggered via $PSRCC,R,Reboot)
 // ============================================================================
-//  resetCmd() lives in the main .ino - it is sketch-level behaviour
-//  (clean WDT reset). Declared extern here so execCommand() can dispatch it.
+//  resetCmd() lives in RemoteCore.h next to the other reset paths (clean WDT
+//  reset). Declared extern here so execCommand() can dispatch it.
 extern void resetCmd();
 
 // ============================================================================
@@ -159,6 +167,7 @@ bool queryInfo(const char* cmd) {
     else if (!strcmp_P(cmd, PSTR("FileDate"))) { sendFileDate();      return true; }
     else if (!strcmp_P(cmd, PSTR("FileName"))) { sendFileName();      return true; }
     else if (!strcmp_P(cmd, PSTR("Time")))     { sendTime();          return true; }
+    else if (!strcmp_P(cmd, PSTR("Core")))     { sendCoreVersion();   return true; }
     else                                       {                      return false; }
 }
 
